@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Crear cuenta · Bot de empleos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --papel:      #EFEFE9;
+    --tinta:      #1A1D1A;
+    --tinta-baja: #6F756C;
+    --linea:      #D6D7CF;
+    --pino:       #2C5F4F;
+    --oxido:      #9C4A2F;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--papel); color: var(--tinta);
+    font-family: "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
+    font-size: 15px;
+  }
+  .caja, form {
+    width: 100%; max-width: 20rem;
+    padding: 2rem 1.75rem;
+    border: 1px solid var(--linea); border-radius: 6px;
+    background: #fff;
+  }
+  h1 { font-size: 1.125rem; font-weight: 600; margin: 0 0 0.75rem; }
+  p { font-size: 0.875rem; color: var(--tinta-baja); line-height: 1.5; margin: 0; }
+  label { display: block; font-size: 0.8125rem; color: var(--tinta-baja); margin: 1rem 0 0.3rem; }
+  label:first-of-type { margin-top: 1.25rem; }
+  input {
+    width: 100%; font: inherit; font-size: 0.9375rem;
+    padding: 0.5rem 0.65rem;
+    border: 1px solid var(--linea); border-radius: 4px;
+    background: var(--papel); color: var(--tinta);
+  }
+  input:focus { outline: 2px solid var(--pino); outline-offset: 1px; }
+  button {
+    width: 100%; font: inherit; font-size: 0.9375rem; font-weight: 500;
+    padding: 0.55rem; margin-top: 1.25rem;
+    border: none; border-radius: 4px; cursor: pointer;
+    background: var(--pino); color: var(--papel);
+  }
+  button:hover { opacity: 0.92; }
+  .error { font-size: 0.8125rem; color: var(--oxido); margin: 0 0 -0.5rem; }
+</style>
+</head>
+<body>
+{% if not valido %}
+  <div class="caja">
+    <h1>Link no válido</h1>
+    <p>Este link de invitación ya se usó, venció, o no existe. Pídele a quien
+       te lo mandó que genere uno nuevo.</p>
+  </div>
+{% else %}
+  <form method="post">
+    <h1>Crea tu cuenta</h1>
+    <p>Después de esto vas a poder armar tu propia búsqueda desde
+       "Configuración" — qué portales revisar, qué palabras clave, y tu
+       propio Telegram.</p>
+    {% if error %}<p class="error">{{ error }}</p>{% endif %}
+    <label for="login">Elige un usuario</label>
+    <input id="login" name="login" autocomplete="username" autofocus required>
+    <label for="password">Elige una contraseña</label>
+    <input id="password" name="password" type="password" autocomplete="new-password" required>
+    <button type="submit">Crear cuenta</button>
+  </form>
+{% endif %}
+</body>
+</html>

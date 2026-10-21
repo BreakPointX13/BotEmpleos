@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ofertas · {{ total }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --papel:      #EFEFE9;
+    --tinta:      #1A1D1A;
+    --tinta-baja: #6F756C;
+    --linea:      #D6D7CF;
+    --pino:       #2C5F4F;
+    --oxido:      #9C4A2F;
+    --realce:     #E4E5DC;
+
+    /* Nivel de puntaje: mismo verde/ámbar/rust del resto de la paleta. */
+    --nivel-alto:  var(--pino);
+    --nivel-medio: #B08628;
+    --nivel-bajo:  var(--oxido);
+
+    /* Un color por portal, para la etiqueta junto a cada oferta. */
+    --p-getonbrd:       #3C7A6F;
+    --p-remoteok:       #3C5A8C;
+    --p-weworkremotely: #6B4C8C;
+    --p-trabajando:     #7A6A3C;
+    --p-terminal:       #45586B;
+    --p-computrabajo:   #8C5A3C;
+    --p-laborum:        #8C4560;
+    --p-linkedin:       #2E6E9E;
+    --p-indeed:         #3C7A9E;
+    --p-otro:           #5A5F58;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { overflow-x: hidden; }
+  body {
+    margin: 0;
+    background: var(--papel);
+    color: var(--tinta);
+    font-family: "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .marco { max-width: 62rem; margin: 0 auto; padding: 0 1.25rem 6rem; }
+
+  /* --- cabecera y filtros ------------------------------------------- */
+
+  header {
+    position: sticky; top: 0; z-index: 10;
+    background: var(--papel);
+    border-bottom: 1px solid var(--linea);
+    padding: 1.5rem 0 0;
+  }
+
+  .fila-cabecera {
+    display: flex; justify-content: space-between; align-items: baseline;
+    gap: 1rem; flex-wrap: wrap;
+  }
+  .cuenta { display: flex; gap: 0.75rem; }
+  .cuenta a { font-size: 0.8125rem; color: var(--tinta-baja); text-decoration: none; }
+  .cuenta a:hover { color: var(--tinta); text-decoration: underline; text-underline-offset: 3px; }
+
+  h1 {
+    font-size: 1.375rem; font-weight: 600; letter-spacing: -0.015em;
+    margin: 0 0 1rem;
+  }
+  h1 span { color: var(--tinta-baja); font-weight: 400; }
+
+  nav { display: flex; gap: 0.25rem; flex-wrap: wrap; }
+
+  nav a {
+    display: block;
+    padding: 0.4rem 0.7rem;
+    margin-bottom: -1px;
+    border-bottom: 2px solid transparent;
+    color: var(--tinta-baja);
+    text-decoration: none;
+    font-size: 0.875rem;
+  }
+  nav a:hover { color: var(--tinta); }
+  nav a[aria-current="page"] {
+    color: var(--tinta); font-weight: 500;
+    border-bottom-color: var(--pino);
+  }
+  nav a b { font-weight: 500; font-variant-numeric: tabular-nums; }
+
+  .orden { display: flex; gap: 0.3rem; margin: 0.7rem 0 0.9rem; }
+  .orden a {
+    font-size: 0.8125rem; padding: 0.25rem 0.65rem;
+    border: 1px solid var(--linea); border-radius: 999px;
+    color: var(--tinta-baja); text-decoration: none;
+  }
+  .orden a:hover { border-color: var(--tinta-baja); color: var(--tinta); }
+  .orden a[aria-current="true"] {
+    background: var(--pino); border-color: var(--pino);
+    color: var(--papel); font-weight: 500;
+  }
+  .orden .sep { width: 1px; margin: 0 0.2rem; background: var(--linea); }
+
+  /* --- fila de oferta ------------------------------------------------ */
+
+  ol { list-style: none; margin: 0; padding: 0; }
+
+  li {
+    display: grid;
+    grid-template-columns: 3.25rem 1fr auto;
+    gap: 0 1rem;
+    align-items: start;
+    padding: 1rem 0.75rem 1rem 0.6rem;
+    margin: 0 -0.75rem;
+    border-bottom: 1px solid var(--linea);
+    border-left: 3px solid transparent;
+    scroll-margin-top: 8rem;
+  }
+  li[data-sel="1"] { background: var(--realce); }
+  li[data-estado="descartada"] { opacity: 0.4; }
+  li[data-nivel="alto"]  { border-left-color: var(--nivel-alto); }
+  li[data-nivel="medio"] { border-left-color: var(--nivel-medio); }
+  li[data-nivel="bajo"]  { border-left-color: var(--nivel-bajo); }
+
+  /* --- etiqueta de portal ---------------------------------------------- */
+
+  .portal {
+    display: inline-block;
+    margin-right: 0.5em;
+    padding: 0.05em 0.5em;
+    border-radius: 999px;
+    font-size: 0.7rem; font-weight: 500;
+    color: var(--papel);
+    background: var(--p-otro);
+    white-space: nowrap;
+    vertical-align: 1px;
+  }
+  .portal[data-fuente="getonbrd"]       { background: var(--p-getonbrd); }
+  .portal[data-fuente="remoteok"]       { background: var(--p-remoteok); }
+  .portal[data-fuente="weworkremotely"] { background: var(--p-weworkremotely); }
+  .portal[data-fuente="trabajando"]     { background: var(--p-trabajando); }
+  .portal[data-fuente="terminal"]       { background: var(--p-terminal); }
+  .portal[data-fuente="computrabajo"]   { background: var(--p-computrabajo); }
+  .portal[data-fuente="laborum"]        { background: var(--p-laborum); }
+  .portal[data-fuente="linkedin"]       { background: var(--p-linkedin); }
+  .portal[data-fuente="indeed"]         { background: var(--p-indeed); }
+
+  /* --- link directo a la oferta ----------------------------------------- */
+
+  .ver-oferta {
+    font-size: 0.8125rem; color: var(--tinta-baja);
+    text-decoration: none; white-space: nowrap;
+  }
+  .ver-oferta:hover { color: var(--pino); text-decoration: underline; text-underline-offset: 3px; }
+
+  /* Medidor de puntaje: el único elemento con peso visual de la página. */
+  .puntaje { text-align: right; padding-top: 0.1rem; }
+  .puntaje b {
+    display: block;
+    font-size: 1rem; font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+  .medidor { display: flex; gap: 2px; justify-content: flex-end; margin-top: 5px; }
+  .medidor i {
+    width: 8px; height: 3px;
+    background: var(--linea);
+  }
+  .medidor i.on { background: var(--pino); }
+
+  .titulo {
+    font-weight: 500; font-size: 1rem;
+    color: var(--tinta); text-decoration: none;
+    letter-spacing: -0.01em;
+  }
+  .titulo:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+  .meta, .motivos {
+    font-size: 0.8125rem; color: var(--tinta-baja);
+    margin-top: 0.2rem;
+  }
+  .motivos { font-style: italic; }
+
+  /* --- acciones ------------------------------------------------------ */
+
+  .acciones { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+
+  button {
+    font: inherit; font-size: 0.8125rem;
+    padding: 0.25rem 0.6rem;
+    background: transparent;
+    border: 1px solid var(--linea);
+    border-radius: 2px;
+    color: var(--tinta-baja);
+    cursor: pointer;
+  }
+  button:hover { border-color: var(--tinta-baja); color: var(--tinta); }
+  button:focus-visible { outline: 2px solid var(--pino); outline-offset: 1px; }
+  button[aria-pressed="true"] {
+    background: var(--pino); border-color: var(--pino); color: var(--papel);
+  }
+  button.descartar[aria-pressed="true"] {
+    background: var(--oxido); border-color: var(--oxido);
+  }
+
+  /* --- vacío y ayuda ------------------------------------------------- */
+
+  .vacio { padding: 4rem 0; max-width: 34rem; }
+  .vacio p { margin: 0 0 0.75rem; color: var(--tinta-baja); }
+  code {
+    font-family: ui-monospace, monospace; font-size: 0.875em;
+    background: var(--realce); padding: 0.15em 0.4em; border-radius: 2px;
+  }
+
+  .teclas {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: var(--papel);
+    border-top: 1px solid var(--linea);
+    padding: 0.5rem 1.25rem;
+    font-size: 0.75rem; color: var(--tinta-baja);
+  }
+  .teclas kbd {
+    font-family: inherit; font-weight: 500; color: var(--tinta);
+    border: 1px solid var(--linea); border-radius: 2px;
+    padding: 0 0.3em; margin-right: 0.15em;
+  }
+
+  @media (max-width: 40rem) {
+    li { grid-template-columns: 2.75rem 1fr; }
+    .acciones { grid-column: 2; margin-top: 0.6rem; }
+    .teclas { display: none; }
+    /* Botones más altos en celular: 44px es el mínimo cómodo para el dedo. */
+    .acciones button { padding: 0.55rem 0.7rem; }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    li { transition: opacity 120ms ease, background 120ms ease; }
+  }
+</style>
+</head>
+<body>
+
+{% macro vurl(estado=estado_activo, orden=orden_activo, mostrar=mostrar_descartadas, categoria=categoria_activa, fuente=fuente_activa) -%}
+/?{% if estado %}estado={{ estado }}&{% endif %}{% if categoria %}categoria={{ categoria }}&{% endif %}{% if fuente %}fuente={{ fuente }}&{% endif %}orden={{ orden }}{% if mostrar %}&desc=mostrar{% endif %}
+{%- endmacro %}
+
+<div class="marco">
+  <header>
+    <div class="fila-cabecera">
+      <h1>Ofertas <span>{{ total }} en total</span></h1>
+      <div class="cuenta">
+        <a href="{{ url_for('configuracion') }}">Configuración</a>
+        <a href="{{ url_for('logout') }}">Cerrar sesión</a>
+      </div>
+    </div>
+    <div class="orden">
+      <a href="{{ vurl(orden='reciente') }}"
+         aria-current="{{ 'true' if orden_activo == 'reciente' else 'false' }}">Más recientes</a>
+      <a href="{{ vurl(orden='puntaje') }}"
+         aria-current="{{ 'true' if orden_activo == 'puntaje' else 'false' }}">Puntaje</a>
+      <span class="sep"></span>
+      <a href="{{ vurl(mostrar=not mostrar_descartadas) }}"
+         aria-current="{{ 'true' if not mostrar_descartadas else 'false' }}">
+        {{ 'Descartadas y sin relación ocultas' if not mostrar_descartadas else 'Mostrando todo' }}
+      </a>
+    </div>
+    <div class="orden">
+      <a href="{{ vurl(estado=none, categoria=none if categoria_activa == 'excluida' else 'excluida') }}"
+         aria-current="{{ 'true' if categoria_activa == 'excluida' else 'false' }}">
+        {{ categorias_ocultas['excluida'] }} <b>{{ conteo_ocultas.get('excluida', 0) }}</b>
+      </a>
+      <a href="{{ vurl(estado=none, categoria=none if categoria_activa == 'sin_relacion' else 'sin_relacion') }}"
+         aria-current="{{ 'true' if categoria_activa == 'sin_relacion' else 'false' }}">
+        {{ categorias_ocultas['sin_relacion'] }} <b>{{ conteo_ocultas.get('sin_relacion', 0) }}</b>
+      </a>
+    </div>
+    {% if fuentes_usadas|length > 1 %}
+    <div class="orden">
+      <a href="{{ vurl(fuente=none) }}" aria-current="{{ 'true' if not fuente_activa else 'false' }}">Todos los portales</a>
+      {% for f in fuentes_usadas %}
+        <a href="{{ vurl(fuente=f) }}" aria-current="{{ 'true' if fuente_activa == f else 'false' }}">
+          {{ nombres_portal.get(f, f) }}
+        </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+    <nav>
+      <a href="{{ vurl(estado=none, categoria=none) }}" {% if not estado_activo and not categoria_activa %}aria-current="page"{% endif %}>Todas</a>
+      {% for clave, texto in etiquetas.items() %}
+        <a href="{{ vurl(estado=clave, categoria=none) }}" {% if estado_activo == clave %}aria-current="page"{% endif %}>
+          {{ texto }} <b>{{ conteo.get(clave, 0) }}</b>
+        </a>
+      {% endfor %}
+    </nav>
+  </header>
+
+  {% if ofertas %}
+  <ol id="lista">
+    {% for o in ofertas %}
+    <li data-huella="{{ o.huella }}" data-estado="{{ o.estado }}" data-url="{{ o.url }}" data-nivel="{{ o.nivel }}">
+      <div class="puntaje">
+        <b>{{ o.score }}</b>
+        <div class="medidor" role="img" aria-label="Coincidencia {{ o.score }} de 100">
+          {% for n in range(5) %}<i class="{% if n < o.segmentos %}on{% endif %}"></i>{% endfor %}
+        </div>
+      </div>
+
+      <div>
+        <span class="portal" data-fuente="{{ o.fuente }}">{{ nombres_portal.get(o.fuente, o.fuente) }}</span>
+        <a class="titulo" href="{{ o.url }}" target="_blank" rel="noopener">{{ o.titulo }}</a>
+        <div class="meta">
+          {{ o.empresa }}{% if o.ubicacion %} · {{ o.ubicacion }}{% endif %}{% if o.modalidad %} · {{ o.modalidad }}{% endif %}{% if o.salario %} · {{ o.salario }}{% endif %}{% if o.publicada_hace %} · {{ o.publicada_hace }}{% endif %}
+          · <a class="ver-oferta" href="{{ o.url }}" target="_blank" rel="noopener">Ver oferta ↗</a>
+        </div>
+        {% if o.motivos %}<div class="motivos">{{ o.motivos|join(' · ') }}</div>{% endif %}
+      </div>
+
+      <div class="acciones">
+        <button data-a="interesada" aria-pressed="{{ 'true' if o.estado == 'interesada' else 'false' }}">Me interesa</button>
+        <button data-a="postulada" aria-pressed="{{ 'true' if o.estado == 'postulada' else 'false' }}">Postulé</button>
+        <button class="descartar" data-a="descartada" aria-pressed="{{ 'true' if o.estado == 'descartada' else 'false' }}">Descartar</button>
+      </div>
+    </li>
+    {% endfor %}
+  </ol>
+  {% else %}
+  <div class="vacio">
+    <p>No hay ofertas guardadas todavía.</p>
+    <p>Corre <code>python main.py buscar</code> en la terminal y vuelve a cargar esta página.</p>
+  </div>
+  {% endif %}
+</div>
+
+<div class="teclas">
+  <kbd>j</kbd><kbd>k</kbd> moverse · <kbd>i</kbd> me interesa · <kbd>p</kbd> postulé · <kbd>x</kbd> descartar · <kbd>enter</kbd> abrir
+</div>
+
+<script>
+(function () {
+  const filas = [...document.querySelectorAll('#lista li')];
+  if (!filas.length) return;
+  let cursor = 0;
+
+  function seleccionar(i) {
+    filas[cursor]?.removeAttribute('data-sel');
+    cursor = Math.max(0, Math.min(filas.length - 1, i));
+    filas[cursor].setAttribute('data-sel', '1');
+    filas[cursor].scrollIntoView({ block: 'nearest' });
+  }
+
+  async function marcar(fila, estado) {
+    const res = await fetch('/estado/' + fila.dataset.huella, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ estado })
+    });
+    if (!res.ok) return;
+    fila.dataset.estado = estado;
+    fila.querySelectorAll('.acciones button').forEach(b =>
+      b.setAttribute('aria-pressed', String(b.dataset.a === estado))
+    );
+  }
+
+  document.querySelectorAll('.acciones button').forEach(b =>
+    b.addEventListener('click', e => marcar(e.target.closest('li'), b.dataset.a))
+  );
+
+  document.addEventListener('keydown', e => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const atajos = { i: 'interesada', p: 'postulada', x: 'descartada' };
+    if (e.key === 'j') { seleccionar(cursor + 1); e.preventDefault(); }
+    else if (e.key === 'k') { seleccionar(cursor - 1); e.preventDefault(); }
+    else if (e.key === 'Enter') { window.open(filas[cursor].dataset.url, '_blank'); }
+    else if (atajos[e.key]) {
+      marcar(filas[cursor], atajos[e.key]);
+      seleccionar(cursor + 1);
+      e.preventDefault();
+    }
+  });
+
+  seleccionar(0);
+})();
+</script>
+
+</body>
+</html>

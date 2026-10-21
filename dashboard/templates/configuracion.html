@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Configuración · Bot de empleos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --papel:      #EFEFE9;
+    --tinta:      #1A1D1A;
+    --tinta-baja: #6F756C;
+    --linea:      #D6D7CF;
+    --pino:       #2C5F4F;
+    --oxido:      #9C4A2F;
+    --realce:     #E4E5DC;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--papel); color: var(--tinta);
+    font-family: "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
+    font-size: 15px; line-height: 1.5;
+  }
+  .marco { max-width: 40rem; margin: 0 auto; padding: 1.5rem 1.25rem 6rem; }
+  .fila-cabecera {
+    display: flex; justify-content: space-between; align-items: baseline;
+    gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem;
+  }
+  h1 { font-size: 1.375rem; font-weight: 600; letter-spacing: -0.015em; margin: 0; }
+  .cuenta a { font-size: 0.8125rem; color: var(--tinta-baja); text-decoration: none; }
+  .cuenta a:hover { color: var(--tinta); text-decoration: underline; text-underline-offset: 3px; }
+
+  section {
+    margin-bottom: 1.75rem; padding-bottom: 1.75rem;
+    border-bottom: 1px solid var(--linea);
+  }
+  h2 { font-size: 1rem; font-weight: 600; margin: 0 0 0.3rem; }
+  .ayuda { font-size: 0.8125rem; color: var(--tinta-baja); margin: 0 0 0.9rem; }
+
+  label { display: block; font-size: 0.8125rem; color: var(--tinta-baja); margin: 0.9rem 0 0.3rem; }
+  label:first-of-type { margin-top: 0; }
+  input, textarea {
+    width: 100%; font: inherit; font-size: 0.9375rem;
+    padding: 0.5rem 0.65rem;
+    border: 1px solid var(--linea); border-radius: 4px;
+    background: #fff; color: var(--tinta);
+  }
+  textarea { min-height: 5.5rem; resize: vertical; font-family: ui-monospace, monospace; font-size: 0.875rem; }
+  input:focus, textarea:focus { outline: 2px solid var(--pino); outline-offset: 1px; }
+  input[type="number"] { max-width: 8rem; }
+
+  .casillas { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; }
+  .casilla { display: flex; align-items: center; gap: 0.4rem; font-size: 0.9375rem; }
+  .casilla input { width: auto; }
+
+  .pesos { display: grid; grid-template-columns: 1fr 1fr; gap: 0 1.5rem; }
+
+  button {
+    font: inherit; font-size: 0.9375rem; font-weight: 500;
+    padding: 0.6rem 1.5rem; border: none; border-radius: 4px; cursor: pointer;
+    background: var(--pino); color: var(--papel);
+  }
+  button:hover { opacity: 0.92; }
+
+  .mensaje {
+    background: var(--realce); border-radius: 4px;
+    padding: 0.6rem 0.9rem; margin-bottom: 1.5rem; font-size: 0.875rem;
+  }
+</style>
+</head>
+<body>
+<div class="marco">
+  <div class="fila-cabecera">
+    <h1>Configuración</h1>
+    <div class="cuenta">
+      <a href="{{ url_for('inicio') }}">← Volver a ofertas</a>
+      <a href="{{ url_for('logout') }}">Cerrar sesión</a>
+    </div>
+  </div>
+
+  {% if mensaje %}<p class="mensaje">{{ mensaje }}</p>{% endif %}
+
+  <form method="post">
+    <section>
+      <h2>Portales</h2>
+      <p class="ayuda">Cuáles revisa el bot en cada corrida.</p>
+      <div class="casillas">
+        {% for clave, nombre in nombres_portal.items() if clave in portales %}
+          <label class="casilla">
+            <input type="checkbox" name="portales_activos" value="{{ clave }}"
+                   {% if clave in cfg.portales_activos %}checked{% endif %}>
+            {{ nombre }}
+          </label>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section>
+      <h2>Qué buscar</h2>
+      <p class="ayuda">Una frase de búsqueda por línea. Menos es más: frases cortas traen más resultados.</p>
+      <textarea name="consultas">{{ cfg.consultas | join('\n') }}</textarea>
+    </section>
+
+    <section>
+      <h2>Filtros</h2>
+      <p class="ayuda">Una palabra o frase por línea. Se busca siempre como palabra completa.</p>
+
+      <label>Descartar de plano si aparece cualquiera de estos</label>
+      <textarea name="filtros_excluir">{{ cfg.filtros.excluir | join('\n') }}</textarea>
+
+      <label>Señales de que el puesto es de entrada (junior)</label>
+      <textarea name="filtros_junior">{{ cfg.filtros.junior | join('\n') }}</textarea>
+
+      <label>Roles que te interesan (se buscan en el título)</label>
+      <textarea name="filtros_roles">{{ cfg.filtros.roles | join('\n') }}</textarea>
+
+      <label>Tu stack / tecnologías (mientras más coincidan, más puntaje)</label>
+      <textarea name="filtros_stack">{{ cfg.filtros.stack | join('\n') }}</textarea>
+    </section>
+
+    <section>
+      <h2>Puntaje</h2>
+      <p class="ayuda">Cuánto suma cada señal. La oferta parte en 0 y va sumando.</p>
+      <div class="pesos">
+        <div>
+          <label>Junior en el título</label>
+          <input type="number" name="scoring_junior_en_titulo" value="{{ cfg.scoring.junior_en_titulo }}">
+        </div>
+        <div>
+          <label>Junior en el texto</label>
+          <input type="number" name="scoring_junior_en_texto" value="{{ cfg.scoring.junior_en_texto }}">
+        </div>
+        <div>
+          <label>Por cada tecnología de tu stack</label>
+          <input type="number" name="scoring_por_tecnologia" value="{{ cfg.scoring.por_tecnologia }}">
+        </div>
+        <div>
+          <label>Techo del puntaje por stack</label>
+          <input type="number" name="scoring_tope_stack" value="{{ cfg.scoring.tope_stack }}">
+        </div>
+        <div>
+          <label>Rol coincide con el título</label>
+          <input type="number" name="scoring_rol_coincide" value="{{ cfg.scoring.rol_coincide }}">
+        </div>
+        <div>
+          <label>Modalidad remota</label>
+          <input type="number" name="scoring_remoto" value="{{ cfg.scoring.remoto }}">
+        </div>
+        <div>
+          <label>Modalidad híbrida</label>
+          <input type="number" name="scoring_hibrido" value="{{ cfg.scoring.hibrido }}">
+        </div>
+      </div>
+
+      <label>Puntaje mínimo para avisarte por Telegram</label>
+      <input type="number" name="score_minimo_aviso" value="{{ cfg.score_minimo_aviso }}">
+
+      <label>Tope de avisos de Telegram por corrida</label>
+      <input type="number" name="max_avisos_por_corrida" value="{{ cfg.max_avisos_por_corrida }}">
+    </section>
+
+    <section>
+      <h2>Telegram</h2>
+      <p class="ayuda">
+        Crea tu propio bot hablando con @BotFather en Telegram (manda /newbot),
+        escríbele algo, y abre
+        <code>https://api.telegram.org/bot&lt;TU_TOKEN&gt;/getUpdates</code>
+        para sacar tu chat_id del "chat":{"id": ...} que aparece.
+      </p>
+      <label>Token del bot</label>
+      <input name="telegram_token" autocomplete="off"
+             placeholder="{{ '•••• (sin cambiar)' if fila.telegram_token else 'Pega acá el token' }}">
+
+      <label>Chat ID</label>
+      <input name="telegram_chat_id" autocomplete="off"
+             value="{{ fila.telegram_chat_id or '' }}" placeholder="Ej: 123456789">
+    </section>
+
+    <section>
+      <h2>Correo (opcional)</h2>
+      <p class="ayuda">
+        Solo si activaste el portal "Correo (LinkedIn/Indeed)": necesitas una
+        contraseña de aplicación de Gmail (Cuenta de Google → Seguridad →
+        Verificación en dos pasos → Contraseñas de aplicaciones), no tu
+        contraseña normal.
+      </p>
+      <label>Correo de Gmail</label>
+      <input name="gmail_user" autocomplete="off"
+             value="{{ fila.gmail_user or '' }}" placeholder="tu-correo@gmail.com">
+
+      <label>Contraseña de aplicación</label>
+      <input name="gmail_app_password" autocomplete="off"
+             placeholder="{{ '•••• (sin cambiar)' if fila.gmail_app_password else 'xxxx xxxx xxxx xxxx' }}">
+    </section>
+
+    <button type="submit">Guardar</button>
+  </form>
+</div>
+</body>
+</html>

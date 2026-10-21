@@ -1,0 +1,11 @@
+.env
+data/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+venv/
+.venv/
+
+# Config personal heredada (pre-multiusuario) y ajustes locales de Claude Code
+config.yaml
+.claude/settings.local.json

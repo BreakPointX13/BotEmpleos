@@ -1,0 +1,134 @@
+GUÍA DE USO — BOT DE OFERTAS DE TRABAJO
+========================================
+
+Esto es un sistema que revisa varios portales de empleo automáticamente,
+descarta lo que no tiene relación con lo que buscas, y te avisa por
+Telegram cuando aparece algo bueno. Todo lo que encuentra también queda
+guardado en un panel web donde puedes revisarlo con calma.
+
+Cada persona tiene su propia cuenta, su propia búsqueda configurada y su
+propio Telegram — lo que ves tú no lo ve nadie más, y al revés.
+
+
+1. CREAR TU CUENTA
+-------------------
+Si alguien te mandó un link de invitación (algo como
+".../invitar/xxxxxxxx"), ábrelo en el navegador:
+
+  1. Elige un usuario y una contraseña (los que quieras, son solo tuyos).
+  2. Apenas creas la cuenta, quedas dentro y te lleva directo a la
+     página de "Configuración" para armar tu búsqueda (ver punto 4).
+
+Ojo: ese link sirve una sola vez. Si ya lo usaste, o si pasó mucho
+tiempo y venció, pide uno nuevo a quien administra el servidor.
+
+
+2. ENTRAR DESPUÉS DE TENER CUENTA
+-----------------------------------
+Entra a la dirección del dashboard (te la debieron pasar junto con el
+link de invitación) e inicia sesión con tu usuario y contraseña.
+
+
+3. EL PANEL PRINCIPAL
+-----------------------
+Al entrar ves la lista de ofertas encontradas, cada una con:
+
+  - Un puntaje (0 a 100): qué tan bien calza con lo que buscas, según
+    tu configuración.
+  - El portal de donde salió (Get on Board, LinkedIn, etc.).
+  - Empresa, ubicación, modalidad y hace cuánto se publicó.
+  - Los "motivos" del puntaje (por qué sumó o no sumó puntos) — te
+    sirve para entender por qué algo quedó arriba o abajo.
+
+Arriba puedes cambiar el orden ("Más recientes" o "Puntaje") y filtrar:
+
+  - Por estado: Sin revisar / Me interesa / Postulada / Descartada.
+  - "Cargo relacionado, no buscado": ofertas de tu área pero que no
+    calzan con el nivel que buscas (por ejemplo, piden más experiencia
+    de la que quieres).
+  - "Sin relación con tu perfil": ofertas que no tienen nada que ver
+    con lo que buscas, aunque hayan matcheado alguna palabra suelta.
+  - Por portal: para ver solo las de un sitio en particular.
+
+Estas dos últimas categorías vienen ocultas por defecto para no
+llenarte la vista de ruido. Si quieres revisarlas igual, hay un botón
+para mostrarlas.
+
+
+4. MARCAR OFERTAS
+-------------------
+Cada oferta tiene tres botones (o atajos de teclado):
+
+  - "Me interesa"   (tecla i)
+  - "Postulé"       (tecla p)
+  - "Descartar"     (tecla x)
+
+Otros atajos útiles:
+  - j / k       → moverte entre ofertas (abajo / arriba)
+  - Enter       → abrir la oferta en una pestaña nueva
+
+Todo lo que marques queda guardado tal cual — nadie más ve ni modifica
+tu propio triaje.
+
+
+5. NOTIFICACIONES POR TELEGRAM
+---------------------------------
+Para recibir avisos automáticos necesitas conectar tu propio bot de
+Telegram (no es uno compartido):
+
+  1. Abre la app de Telegram y busca el usuario "BotFather" (tiene una
+     tilde azul de verificado — cuidado con imitadores).
+  2. Escríbele /start y después /newbot.
+  3. Te va a pedir dos cosas:
+       - Un nombre para tu bot (cualquiera, ej. "Ofertas Daniel").
+       - Un usuario para el bot, que tiene que terminar en "bot"
+         (ej. "ofertas_daniel_bot"). Si ya está tomado, prueba con otra
+         variante.
+  4. Apenas lo creas, BotFather te manda un mensaje con una línea larga
+     de letras y números — eso es el TOKEN. Se ve más o menos así:
+       123456789:ABCdefGhIJKlmNoPQRstuVWXyz1234567
+     Cópialo completo (o mantenlo presionado para copiarlo).
+  5. Busca ese bot que acabas de crear (con el usuario que le pusiste)
+     y escríbele cualquier cosa, por ejemplo "hola". Esto es necesario
+     para que el bot "sepa" que existes y pueda mandarte mensajes
+     después — si no le escribes primero, no puede iniciar la
+     conversación.
+  6. Abre en el navegador:
+     https://api.telegram.org/bot<TU_TOKEN>/getUpdates
+     (reemplaza <TU_TOKEN> por el que te dio BotFather, incluido el
+     ":" y todo) y busca el número que aparece como "chat":{"id": ...}
+     — ese número es tu chat_id. Si la página sale vacía ({"ok":true,
+     "result":[]}), es porque falta el paso 5 (escribirle al bot
+     primero) — hazlo y vuelve a cargar la página.
+  7. Carga el token y el chat_id en "Configuración" dentro del
+     dashboard.
+
+Desde ese momento, cuando aparezca una oferta con buen puntaje te va a
+llegar un mensaje directo a ese chat.
+
+
+6. CONFIGURAR TU BÚSQUEDA
+----------------------------
+Todo se edita desde "Configuración" en el dashboard, sin tocar nada
+técnico:
+
+  - Qué portales revisar.
+  - Qué términos buscar (por ejemplo "desarrollador junior",
+    "diseñador UX", lo que corresponda a tu carrera).
+  - Palabras que descartan una oferta de inmediato (por ejemplo
+    "senior", "gerente", si buscas algo de nivel inicial).
+  - Palabras que indican que el puesto es de entrada (junior, trainee,
+    sin experiencia, etc.).
+  - Roles que te interesan y tu stack o herramientas de trabajo.
+  - Los pesos del puntaje, y desde qué puntaje te avisa por Telegram.
+
+Un consejo: si cambias tu búsqueda y quieres que también se actualicen
+las ofertas que ya tenías guardadas (y no solo las nuevas), pide que
+corran "recalcular-scores" — eso repuntúa todo lo viejo con tu
+configuración nueva, sin perder lo que ya marcaste a mano.
+
+
+7. SI ALGO NO FUNCIONA
+--------------------------
+Si no te llegan avisos, no puedes entrar, o ves ofertas que no tienen
+sentido, avísale a quien administra el servidor.

@@ -1,0 +1,123 @@
+# Copia este archivo a config.yaml y ajústalo. config.yaml está en .gitignore.
+# Este es el único archivo que deberías tocar en el día a día.
+
+portales_activos:
+  - getonbrd        # API pública, funciona de inmediato
+  - remoteok        # API pública, sin filtro por consulta (ver docstring del scraper)
+  - weworkremotely  # RSS público, sin filtro por consulta (ver docstring del scraper)
+  - trabajando      # API interna no documentada, ver docstring del scraper
+  - terminal        # JSON embebido en su página SSR, filtra a ofertas que aceptan Chile
+  - computrabajo    # scraping HTML, arreglado: ver docstring del scraper
+  # - correo        # alertas de Laborum/LinkedIn/Indeed por email — activar
+                     # cuando los parsers estén verificados contra un correo
+                     # real (ver src/scrapers/correo.py y requiere .env)
+
+# Términos que se le mandan a cada portal. Menos es más: consultas muy largas
+# devuelven poco. Prefiere varias consultas cortas.
+consultas:
+  - "desarrollador junior"
+  - "full stack junior"
+  - "desarrollador movil"
+  - "react native"
+  - "flutter"
+  - "front end junior"
+  - "back end junior"
+
+filtros:
+  # Si alguno de estos aparece, la oferta se descarta sin más análisis.
+  # Sé cuidadoso al agregar términos cortos: se buscan como palabra completa,
+  # pero "lead" igual aparece dentro de frases como "team lead ready".
+  excluir:
+    - senior
+    - "sr"
+    - "tech lead"
+    - "team lead"
+    - arquitecto
+    - architect
+    - jefe
+    - gerente
+    - manager
+    - "5 años"
+    - "6 años"
+    - "7 años"
+    - "practica profesional"   # sácalo si te sirven las prácticas
+
+  # Señales de que el puesto es de entrada.
+  junior:
+    - junior
+    - "jr"
+    - trainee
+    - "entry level"
+    - "sin experiencia"
+    - "primer empleo"
+    - "recien titulado"
+    - "recien egresado"
+    - "1 año"
+    - "2 años"
+
+  # Roles que te interesan, buscados en el título.
+  roles:
+    - "full stack"
+    - fullstack
+    - frontend
+    - "front end"
+    - backend
+    - "back end"
+    - movil
+    - mobile
+    - android
+    - ios
+    - desarrollador
+    - developer
+    - programador
+
+  # Tu stack. Mientras más coincidencias, más alto el score.
+  stack:
+    - javascript
+    - typescript
+    - react
+    - "react native"
+    - vue
+    - angular
+    - node
+    - nodejs
+    - express
+    - python
+    - django
+    - flask
+    - fastapi
+    - java
+    - spring
+    - "spring boot"
+    - kotlin
+    - swift
+    - flutter
+    - dart
+    - php
+    - laravel
+    - "net"
+    - "c#"
+    - sql
+    - postgresql
+    - mysql
+    - mongodb
+    - docker
+    - git
+    - "api rest"
+    - tailwind
+
+# Pesos del scoring. Ajusta si notas que el ranking no refleja tus prioridades.
+scoring:
+  junior_en_titulo: 40    # la señal más fuerte
+  junior_en_texto: 20
+  por_tecnologia: 6
+  tope_stack: 30          # techo para que no gane la oferta con más buzzwords
+  rol_coincide: 15
+  remoto: 10
+  hibrido: 5
+
+# Solo te avisa de ofertas sobre este puntaje. Súbelo si recibes demasiado ruido.
+score_minimo_aviso: 45
+
+# Tope de mensajes de Telegram por corrida. El resto queda en el dashboard.
+max_avisos_por_corrida: 10
