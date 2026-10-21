@@ -258,3 +258,20 @@ def test_fecha_computrabajo(texto, esperado):
 def test_fecha_computrabajo_sin_anio_no_queda_en_el_futuro():
     enero = datetime(2027, 1, 5, tzinfo=timezone.utc)
     assert fecha_publicacion("28 de diciembre", enero).startswith("2026-12-28")
+
+
+def test_recalcular_scores_conserva_los_tags(tmp_path):
+    from src.pipeline import recalcular_scores
+
+    ruta = tmp_path / "t.db"
+    with Repo(ruta) as repo:
+        uid = repo.crear_usuario("ana", "hash-falso", config=CFG)
+    with Repo(ruta, usuario_id=uid) as repo:
+        o = oferta("Desarrollador Junior", fuente="computrabajo")
+        o.tags = ["Remoto"]
+        repo.guardar(puntuar(o, CFG))
+        antes = repo.listar()[0]["score"]
+
+    assert recalcular_scores(str(ruta), login="ana")["ana"]["cambiadas"] == 0
+    with Repo(ruta, usuario_id=uid) as repo:
+        assert repo.listar()[0]["score"] == antes

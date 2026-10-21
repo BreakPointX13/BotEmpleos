@@ -37,7 +37,7 @@ src/notify/telegram.py   envío de avisos, token/chat_id explícitos (no os.gete
 dashboard/auth.py        login por sesión (werkzeug + flask.session), sin roles
 dashboard/app.py         rutas: /login, /, /estado/<huella>, /configuracion
 dashboard/templates/     index (listado), login, configuracion (formulario del perfil)
-tests/test_nucleo.py     26 tests, sin red
+tests/test_nucleo.py     27 tests, sin red
 ```
 
 `Oferta` es el contrato entre capas: todo scraper devuelve `list[Oferta]` y nada

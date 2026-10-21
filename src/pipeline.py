@@ -132,6 +132,9 @@ def recalcular_scores(ruta_db: str, login: str | None = None) -> dict[str, dict]
                 oferta = Oferta(
                     titulo=f["titulo"], empresa=f["empresa"], url=f["url"],
                     fuente=f["fuente"], descripcion=f["descripcion"] or "",
+                    # Sin `tags` se pierden puntos al recalcular: Get on Board
+                    # guarda ahí el stack y Computrabajo la modalidad.
+                    tags=json.loads(f["tags"] or "[]"),
                 )
                 puntuar(oferta, cfg)
                 nuevo_score = 0 if oferta.score == DESCARTADA else oferta.score

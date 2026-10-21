@@ -334,7 +334,7 @@ class Repo:
         en `/configuracion`, lo viejo se queda con el score anterior hasta
         que se corra esto a mano."""
         return self.con.execute(
-            """SELECT huella, titulo, empresa, url, fuente, descripcion, score, motivos
+            """SELECT huella, titulo, empresa, url, fuente, descripcion, tags, score, motivos
                FROM ofertas WHERE usuario_id = ?""",
             (self._uid(),),
         ).fetchall()
