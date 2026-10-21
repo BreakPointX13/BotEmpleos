@@ -5,6 +5,7 @@ Corre con:  python -m pytest tests/ -v
 
 import json
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -15,6 +16,7 @@ import yaml  # noqa: E402
 from src.db import Repo  # noqa: E402
 from src.models import Oferta  # noqa: E402
 from src.scoring import DESCARTADA, puntuar  # noqa: E402
+from src.scrapers.computrabajo import fecha_publicacion  # noqa: E402
 from src.scrapers.remoteok import RemoteOK, _reparar_mojibake  # noqa: E402
 
 CFG = yaml.safe_load((Path(__file__).parent.parent / "config.example.yaml").read_text())
@@ -234,3 +236,25 @@ def test_recalcular_scores_repuntua_tras_editar_perfil(tmp_path):
         fila = repo.listar()[0]
         assert fila["score"] > 0
         assert fila["estado"] == "interesada"  # el triaje manual no se toca
+
+
+# --- fechas de Computrabajo ----------------------------------------------
+
+AHORA = datetime(2026, 10, 21, 12, 0, tzinfo=timezone.utc)
+
+
+@pytest.mark.parametrize("texto, esperado", [
+    ("Hace  10  horas", "2026-10-21T02:00:00+00:00"),
+    ("Hace 2 días", "2026-10-19T12:00:00+00:00"),
+    ("Ayer", "2026-10-20T12:00:00+00:00"),
+    ("28 de septiembre", "2026-09-28T12:00:00+00:00"),
+    ("Más de 30 días", "2026-09-21T12:00:00+00:00"),
+    ("algo nuevo", None),
+])
+def test_fecha_computrabajo(texto, esperado):
+    assert fecha_publicacion(texto, AHORA) == esperado
+
+
+def test_fecha_computrabajo_sin_anio_no_queda_en_el_futuro():
+    enero = datetime(2027, 1, 5, tzinfo=timezone.utc)
+    assert fecha_publicacion("28 de diciembre", enero).startswith("2026-12-28")

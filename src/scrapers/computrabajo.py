@@ -42,6 +42,8 @@ este scraper —y solo este— pisa el User-Agent por defecto.
 from __future__ import annotations
 
 import logging
+import re
+from datetime import datetime, timedelta, timezone
 from urllib.parse import urljoin, quote_plus
 
 from bs4 import BeautifulSoup
@@ -68,7 +70,58 @@ SELECTORES = {
     # Salario y modalidad viven como hermanos dentro del mismo div, cada uno
     # identificado por su ícono (i_salary / i_home_office), no por texto.
     "info_extra": "div.fs13.mt15 span.dIB",
+    # Ojo: `div.fs13.mt15` (salario/modalidad) y este `p` comparten clases;
+    # `fc_aux` es lo que distingue al párrafo de la fecha.
+    "fecha": "p.fs13.fc_aux",
 }
+
+_MESES = {
+    "enero": 1, "febrero": 2, "marzo": 3, "abril": 4, "mayo": 5, "junio": 6,
+    "julio": 7, "agosto": 8, "septiembre": 9, "setiembre": 9, "octubre": 10,
+    "noviembre": 11, "diciembre": 12,
+}
+_UNIDADES = {"minuto": "minutes", "hora": "hours", "día": "days", "dia": "days"}
+
+
+def fecha_publicacion(texto: str, ahora: datetime | None = None) -> str | None:
+    """Convierte el texto relativo de la tarjeta en ISO 8601.
+
+    Sin esto `publicada` queda vacía y el dashboard, que ordena "más
+    recientes" por esa columna, manda todas las ofertas de Computrabajo al
+    fondo (mismo problema que tuvo LinkedIn, ver `correo._fecha_correo`).
+    Formatos verificados 2026-10-21: "Hace 10 horas", "Hace 2 días", "Ayer",
+    "28 de septiembre" (sin año) y "Más de 30 días". Un formato desconocido
+    devuelve None en vez de inventar una fecha.
+    """
+    ahora = ahora or datetime.now(timezone.utc)
+    t = " ".join(texto.lower().split())
+
+    if t == "hoy":
+        return ahora.isoformat()
+    if t == "ayer":
+        return (ahora - timedelta(days=1)).isoformat()
+
+    m = re.fullmatch(r"hace (\d+) (minuto|hora|día|dia)s?", t)
+    if m:
+        return (ahora - timedelta(**{_UNIDADES[m[2]]: int(m[1])})).isoformat()
+
+    # Cota inferior, no la fecha real: basta para que quede detrás de las
+    # que sí tienen fecha precisa.
+    if t.startswith("más de 30 días") or t.startswith("mas de 30 dias"):
+        return (ahora - timedelta(days=30)).isoformat()
+
+    m = re.fullmatch(r"(\d{1,2}) de ([a-z]+)", t)
+    if m and m[2] in _MESES:
+        try:
+            fecha = ahora.replace(month=_MESES[m[2]], day=int(m[1]))
+        except ValueError:
+            return None
+        # Sin año: "28 de diciembre" leído en enero es del año pasado.
+        if fecha > ahora:
+            fecha = fecha.replace(year=fecha.year - 1)
+        return fecha.isoformat()
+
+    return None
 
 
 class Computrabajo(Scraper):
@@ -121,6 +174,7 @@ class Computrabajo(Scraper):
                 ubicacion=self._texto(tarjeta, "ubicacion"),
                 modalidad=modalidad,
                 salario=salario,
+                publicada=fecha_publicacion(self._texto(tarjeta, "fecha")),
                 # `modalidad` no entra en `texto_completo`: se repite acá como
                 # tag para que `scoring.py` detecte "remoto"/"híbrido".
                 tags=[modalidad] if modalidad else [],

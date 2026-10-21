@@ -33,8 +33,8 @@ CONFIG_EJEMPLO = Path(__file__).parent.parent / "config.example.yaml"
 
 def _hace(publicada: str | None) -> str | None:
     """Convierte el ISO 8601 de `publicada` en un texto relativo tipo "hace
-    3 días". No todos los portales entregan esta fecha (Computrabajo y
-    Laborum por correo no la traen), así que puede volver None."""
+    3 días". Puede volver None: hay ofertas guardadas antes de que
+    Computrabajo y Laborum rellenaran `publicada`."""
     if not publicada:
         return None
     try:

@@ -245,6 +245,9 @@ def _parsear_laborum(msg: Message) -> list[Oferta]:
         return []
 
     sopa = BeautifulSoup(_cuerpo_html(msg), "html.parser")
+    # El resumen tampoco trae fecha de publicación; misma aproximación que
+    # en `_parsear_linkedin` para que no quede al fondo del dashboard.
+    publicada = _fecha_correo(msg)
 
     ofertas = []
     for h3 in sopa.find_all("h3"):
@@ -272,6 +275,7 @@ def _parsear_laborum(msg: Message) -> list[Oferta]:
             fuente="laborum",
             ubicacion=campos[1] if len(campos) > 1 else "",
             modalidad=campos[3] if len(campos) > 3 else "",
+            publicada=publicada,
             tags=[c for c in campos[2:4] if c],  # jornada + modalidad, visibles para scoring.py
         ))
     return ofertas
