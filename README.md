@@ -1,216 +1,214 @@
-# Buscador de ofertas
+# BotEmpleos
 
-Recolecta ofertas de trabajo de varios portales, las puntúa según el perfil de
-cada usuario, elimina duplicados y avisa por Telegram. Trae además un
-dashboard con login real para revisar y marcar ofertas con el teclado.
+Sistema multiusuario que recolecta ofertas de trabajo desde distintos portales
+de empleo, las puntúa según el perfil de cada persona, elimina duplicados y
+notifica las más relevantes por Telegram. Incluye un dashboard web con
+autenticación para revisar y clasificar las ofertas.
 
-**Multiusuario**: nació como proyecto personal para un perfil de desarrollador
-junior (full stack y móvil) en Chile, y ahora soporta varias personas —cada
-una con su propia búsqueda (portales, palabras clave, pesos de puntaje), su
-propio Telegram y, si quiere, su propia cuenta de Gmail para alertas por
-correo. Cada quien configura lo suyo desde `/configuracion` en el navegador,
-sin tocar YAML ni terminal.
+Comenzó como una herramienta personal para automatizar mi propia búsqueda de
+empleo como desarrollador junior en Chile. Hoy lo usan varias personas con
+carreras distintas, cada una con su propio perfil de búsqueda, que configura
+desde el navegador.
 
----
+## Funcionalidades
 
-## Partir
+- **Recolección desde nueve fuentes**: APIs públicas, feeds RSS, scraping de
+  HTML y lectura de alertas de empleo por correo (IMAP).
+- **Puntaje configurable por usuario**: cada oferta recibe un puntaje según
+  la seniority, las tecnologías, el rol y la modalidad, y queda registrado el
+  motivo de cada punto.
+- **Exclusiones duras**: las ofertas que contienen términos excluidos (por
+  ejemplo, "senior" o "tech lead" en un perfil junior) se descartan antes de
+  llegar al usuario.
+- **Deduplicación entre portales**: la misma vacante publicada en varios
+  sitios con títulos distintos se consolida en un único registro.
+- **Notificaciones por Telegram**: cada usuario recibe sus avisos en su
+  propio bot.
+- **Dashboard web**: login por sesión, listado ordenado por puntaje o fecha y
+  triaje completo con atajos de teclado (interesa / postulé / descartar).
+- **Configuración desde el navegador**: cada usuario edita sus portales,
+  consultas, filtros y pesos en un formulario, sin tocar archivos ni la
+  terminal.
+- **Alta de cuentas por invitación**: links de un solo uso con expiración,
+  sin registro público abierto.
 
-```bash
-git clone <tu-repo> && cd buscador-empleos
-python -m venv venv && source venv/bin/activate    # en Windows: venv\Scripts\activate
-pip install -r requirements.txt
+## Stack tecnológico
 
-cp .env.example .env
-# Completa FLASK_SECRET_KEY (cualquier string largo al azar, sirve para
-# firmar las sesiones del dashboard) y, si ya tienes datos de una instalación
-# de una sola persona, TELEGRAM_TOKEN/TELEGRAM_CHAT_ID/GMAIL_* para migrarlos.
-
-# Cuenta nueva desde cero (la primera, la tuya):
-python main.py crear-usuario --login tu-usuario --password tu-clave
-
-# Para invitar a alguien más después, no hace falta SSH de nuevo — genera un
-# link de un solo uso y que la persona cree su propia cuenta:
-python main.py generar-invitacion --url-base https://tu-dominio-o-ip
-
-# O, si vienes de una versión previa de una sola persona con config.yaml y
-# datos ya acumulados:
-python main.py migrar-a-multiusuario --login tu-usuario --password tu-clave
-
-python main.py buscar --sin-avisos
-python main.py servir     # http://127.0.0.1:5000 → /login
-```
-
-Ya no existe "el" `config.yaml` de uso diario: cada usuario tiene su propio
-perfil de búsqueda guardado en la base de datos, editable desde
-`/configuracion` en el dashboard. `config.example.yaml` queda como plantilla
-de referencia (la config inicial de una cuenta nueva, y la que usa
-`inspeccionar` para probar scrapers).
-
-## Comandos
-
-| Comando | Qué hace |
+| Área | Tecnología |
 |---|---|
-| `python main.py buscar` | Recolecta, puntúa, guarda y avisa por Telegram — para **todos** los usuarios activos |
-| `python main.py buscar --sin-avisos` | Igual, pero sin notificar. Úsalo mientras calibras |
-| `python main.py servir` | Levanta el dashboard en localhost:5000 |
-| `python main.py resumen [--usuario LOGIN]` | Cuántas ofertas hay en cada estado, de uno o de todos |
-| `python main.py recalcular-scores [--usuario LOGIN]` | Repuntúa lo ya guardado con el perfil actual — corre esto después de cambiar filtros/pesos en `/configuracion`, si quieres que también se actualice lo que ya tenías |
-| `python main.py crear-usuario --login X --password Y` | Da de alta una cuenta nueva con la config de ejemplo (por SSH) |
-| `python main.py generar-invitacion --url-base https://tu-dominio` | Link de un solo uso para que alguien cree su propia cuenta sin SSH |
-| `python main.py migrar-a-multiusuario --login X --password Y` | Migra una instalación vieja de una sola persona (una vez) |
-| `python main.py inspeccionar --portal computrabajo` | Guarda HTML de muestra para arreglar selectores |
-| `python -m pytest tests/ -v` | Corre los tests |
+| Lenguaje | Python 3 |
+| Web | Flask, Jinja2, Werkzeug (hash de contraseñas) |
+| Base de datos | SQLite (SQL directo, sin ORM) |
+| Recolección | requests, BeautifulSoup4, xml.etree (RSS), imaplib y email (IMAP) |
+| Configuración | PyYAML (perfil de referencia), JSON (perfil por usuario) |
+| Notificaciones | API de bots de Telegram |
+| Frontend | HTML y CSS propios, JavaScript sin frameworks |
+| Tests | pytest |
 
-## Estado de cada portal
+El proyecto usa solo cinco dependencias externas a propósito: cada librería
+nueva tenía que justificarse frente a lo que ya ofrece la biblioteca estándar.
 
-| Portal | Método | Estado |
-|---|---|---|
-| **Get on Board** | API pública JSON | Listo, verificado contra una respuesta real. Es tu fuente principal |
-| **Remote OK** | API pública JSON | Listo. Sin filtro por consulta en el origen: el scraper filtra localmente por palabra clave (AND, sin `tags`, ver docstring) |
-| **We Work Remotely** | RSS público | Listo. Mismo filtrado local que Remote OK, sobre el feed agregado de programación (~25 ofertas recientes, sesgado a senior) |
-| **Trabajando.cl** | API interna (no documentada) | Listo. Búsqueda real por palabra clave. Ojo: endpoint encontrado a mano inspeccionando bundles de Nuxt, no hay documentación pública — ver docstring del scraper si deja de funcionar |
-| **Terminal.io** | JSON embebido (SSR) | Listo. Solo ofertas que aceptan postulantes desde Chile. Contrata para empresas de EE.UU./Canadá, sesgado a senior — pocas coincidencias esperadas para un perfil junior |
-| **Computrabajo** | Scraping HTML | Listo. El bloqueo era por User-Agent (WAF), no por selectores desactualizados — igual se corrigieron dos selectores rotos de paso (ubicación y salario/modalidad). Ver docstring del scraper |
-| **Correo (Laborum)** | Alerta por email, vía IMAP | Listo, verificado contra un correo real. Requiere `GMAIL_USER`/`GMAIL_APP_PASSWORD` en `.env` y una alerta creada en Laborum |
-| **Correo (LinkedIn)** | Alerta por email, vía IMAP | Listo, verificado contra un correo real. Sorpresa: el correo de "se creó tu alerta" ya trae las primeras ofertas adentro, no es solo una confirmación |
-| **Correo (Indeed)** | Alerta por email, vía IMAP | Listo, verificado contra un correo real. A diferencia de Laborum/LinkedIn manda un puesto por correo, no un resumen — cada match genera su propio mensaje |
+## Arquitectura
 
-**Get on Board** cubre bastante bien el mercado tech junior en Chile y es la
-fuente principal. Su API está en beta, así que si algún día deja de devolver
-resultados, revisa `https://api-doc.getonbrd.com` y ajusta
-`src/scrapers/getonbrd.py`. El mapeo de campos ya está verificado contra una
-respuesta real (empresa, ubicación, modalidad y tags estaban rotos hasta
-hace poco — ver el docstring del archivo para el detalle).
-
-**Computrabajo** ya está activo. Su WAF devolvía 403 por el User-Agent
-identificable del proyecto —no por selectores desactualizados—, así que este
-scraper usa un User-Agent de navegador normal en vez del genérico (ver el
-docstring de `src/scrapers/computrabajo.py` para el porqué). El markup igual
-puede cambiar con el tiempo; si un día deja de traer resultados:
-
-```bash
-python main.py inspeccionar --portal computrabajo
+```
+scrapers  ->  scoring  ->  deduplicación  ->  SQLite  ->  Telegram / dashboard
 ```
 
-Eso te dice cuántas tarjetas detecta con los selectores actuales. Si detecta
-cero, abre el HTML que guardó y corrige el diccionario `SELECTORES` al inicio de
-`src/scrapers/computrabajo.py`. Es una tarea ideal para pasarle a Claude Code
-junto con el archivo de muestra.
+Todos los scrapers devuelven una lista del mismo modelo (`Oferta`). Ese
+modelo es el contrato entre capas: el puntaje, la deduplicación, la
+persistencia y las notificaciones no saben de qué portal vino cada dato, y
+agregar un portal nuevo no exige cambios en el resto del sistema.
 
-**LinkedIn no se scrapea directo y no conviene agregarlo.** Sus términos de
-servicio prohíben el scraping y tiene detección agresiva que termina en
-bloqueo de cuenta o IP. Lo mismo pasa con Indeed. La alternativa que sí está
-implementada: crear alertas de empleo nativas en LinkedIn/Indeed y leer esos
-correos por IMAP (`src/scrapers/correo.py`) en vez de tocar sus sitios — ver
-la fila "Correo" en la tabla de arriba.
+```
+main.py                  CLI: búsqueda, servidor, gestión de usuarios, mantenimiento
+src/
+  models.py              modelo Oferta y huella de deduplicación
+  scoring.py             puntaje y exclusiones a partir del perfil del usuario
+  db.py                  capa de datos (usuarios, ofertas, invitaciones)
+  pipeline.py            ejecución por usuario activo
+  scrapers/              un módulo por fuente, sobre una clase base común
+  notify/telegram.py     envío de avisos
+dashboard/
+  app.py                 rutas web
+  auth.py                autenticación por sesión
+  templates/             vistas
+tests/                   tests del núcleo, sin acceso a red
+```
 
-## Cómo funciona el puntaje
+## Fuentes de datos
 
-Cada oferta parte en cero y suma. Si aparece un término de `filtros.excluir`
-(senior, tech lead, 5 años), se descarta de inmediato sin analizar el resto.
+| Fuente | Método |
+|---|---|
+| Get on Board | API pública JSON |
+| Remote OK | API pública JSON |
+| We Work Remotely | RSS |
+| Terminal | JSON embebido en la página |
+| Trabajando.cl | API JSON del sitio |
+| Computrabajo | Scraping de HTML |
+| Laborum, LinkedIn, Indeed | Alertas de empleo por correo, leídas por IMAP |
+
+LinkedIn e Indeed prohíben el scraping en sus términos de servicio. En lugar
+de scrapearlos, el sistema lee las alertas de empleo que esos mismos sitios
+envían por correo al usuario, que es el canal que ellos ofrecen para este
+propósito.
+
+## Decisiones técnicas destacadas
+
+**Aislamiento de datos entre usuarios.** La clave primaria de las ofertas es
+compuesta (`usuario_id`, `huella`), de modo que una misma vacante puede ser
+relevante para dos personas con estados de seguimiento independientes. La
+capa de datos exige el `usuario_id` en cada operación y lanza un error si
+falta: es preferible un fallo visible a una fuga silenciosa de datos entre
+cuentas. Como SQLite no permite modificar una clave primaria con
+`ALTER TABLE`, el paso de una instalación de un solo usuario a multiusuario
+se resolvió con un comando de migración dedicado.
+
+**Perfil como datos, no como código.** El perfil de cada usuario (portales,
+consultas, filtros y pesos) se guarda como JSON en la base de datos, con el
+mismo formato que el archivo de configuración original. Así, el puntaje y
+los scrapers no tuvieron que cambiar su lógica para soportar perfiles
+distintos: solo cambió el origen de la configuración.
+
+**Deduplicación por normalización.** Cada oferta tiene una huella calculada
+sobre la empresa y el título normalizado, en tres pasos cuyo orden importa:
+eliminar frases completas, unificar sinónimos y quitar palabras genéricas.
+Por ejemplo, "full time" es ruido, pero "full stack" es información, así que
+las frases se procesan primero. Con esto, "Desarrollador Full Stack Junior"
+y "Junior Full-Stack Dev" de la misma empresa se consolidan en un solo
+registro.
+
+**Coincidencia por palabra completa.** Los términos de los filtros se buscan
+como palabras completas y no como subcadenas. Sin esto, excluir "sr" (senior)
+descartaría cualquier oferta que contenga "desarrollo". Hay un test
+específico para este caso.
+
+**Tolerancia a fallos.** Si un portal falla o cambia su formato, la corrida
+continúa con el resto: cada consulta captura sus propios errores. Los
+portales sin búsqueda por texto se descargan una sola vez por corrida y se
+filtran localmente, en vez de consultarlos una vez por cada término de
+búsqueda.
+
+**Scraping responsable.** El sistema hace pausas de 2,5 segundos entre
+requests al mismo portal, reintenta con espera, identifica su User-Agent y
+revisa el `robots.txt` de cada sitio antes de incorporarlo.
+
+**Verificación contra datos reales.** Los parsers de cada fuente se
+validaron contra respuestas y correos reales, no solo contra la
+documentación. En el caso de la API de Get on Board, la documentación no
+coincidía con la respuesta real en varios campos, y LinkedIn alterna entre
+dos plantillas de correo distintas para la misma alerta; ambos casos se
+detectaron y corrigieron de esta forma.
+
+## Puntaje
+
+Cada oferta parte en cero. Si contiene un término excluido, se descarta de
+inmediato. Si no, suma puntos según señales con pesos configurables por
+usuario. Estos son los valores por defecto para un perfil junior:
 
 | Señal | Puntos |
 |---|---|
 | "junior" en el título | 40 |
 | "junior" solo en la descripción | 20 |
-| Cada tecnología de tu stack | 6, con tope de 30 |
-| El rol coincide con lo que buscas | 15 |
+| Cada tecnología del stack buscado | 6 (máximo 30) |
+| Rol coincidente | 15 |
 | Remoto / híbrido | 10 / 5 |
 
-Cada punto queda registrado en la columna `motivos`, que el dashboard muestra
-bajo cada oferta. Si el ranking no refleja tus prioridades, mira los motivos y
-ajusta los pesos desde `/configuracion`.
+## Instalación
 
-Los términos se buscan como palabra completa, no como subcadena. Suena a
-detalle, pero sin eso `sr` haría match dentro de "desarrollo" y descartarías
-media base de datos sin notarlo. Hay un test que cubre justamente ese caso.
+Requiere Python 3.10 o superior.
 
-## Deduplicación
+```bash
+git clone https://github.com/BreakPointX13/BotEmpleos.git
+cd BotEmpleos
+python -m venv venv
+source venv/bin/activate          # Windows: venv\Scripts\activate
+pip install -r requirements.txt
 
-La misma vacante aparece en varios portales con títulos distintos. Cada oferta
-tiene una huella calculada sobre el título despojado de palabras genéricas, de
-modo que "Desarrollador Full Stack Junior" y "Junior Full-Stack Dev" de la misma
-empresa colapsan en un solo registro. La fuente adicional queda anotada en
-`fuentes_extra`.
-
-No es perfecto: falla cuando la empresa se escribe distinto en cada portal
-("Acme SpA" vs "Acme"). Si te molesta, ahí está el siguiente lugar donde iterar.
-
-## Dashboard
-
-Pensado para una pasada corta al día. Navegación con teclado, sin mouse:
-
-- `j` / `k` — moverse entre ofertas
-- `i` — marcar que te interesa
-- `p` — marcar que postulaste
-- `x` — descartar
-- `enter` — abrir la oferta en otra pestaña
-
-## Telegram
-
-Cada usuario tiene su propio bot — no es una variable de entorno compartida:
-
-1. Habla con `@BotFather`, manda `/newbot`, guarda el token.
-2. Escríbele algo a tu bot recién creado.
-3. Abre `https://api.telegram.org/bot<TU_TOKEN>/getUpdates` y copia el `chat.id`.
-4. Carga ambos valores en `/configuracion`, en el dashboard.
-
-## Automatizar
-
-Un solo proceso Flask + un solo `cron` alcanzan para todos los usuarios —
-`main.py buscar` internamente corre la recolección de cada cuenta activa por
-separado, así que no hace falta un cron por persona:
-
-```
-0 9,15,21 * * * cd /ruta/al/proyecto && ./venv/bin/python main.py buscar >> /var/log/bot-empleos.log 2>&1
+cp .env.example .env              # completar FLASK_SECRET_KEY
+python main.py crear-usuario --login usuario --password clave
+python main.py buscar --sin-avisos
+python main.py servir             # http://127.0.0.1:5000
 ```
 
-Para dejarlo corriendo 24/7 sin depender de tu computador, un VPS chico
-(1 vCPU / 1 GB RAM sobra) con el dashboard como servicio `systemd`
-(`python main.py servir --host 0.0.0.0 --puerto 5000`) y el cron de arriba en
-el crontab de root es suficiente. Ojo con exponer el dashboard a internet:
-usa un `FLASK_SECRET_KEY` real y, si el tráfico te preocupa (redes públicas),
-considera ponerle HTTPS con un dominio.
+Las credenciales de Telegram y Gmail de cada usuario se configuran desde la
+sección `/configuracion` del dashboard.
 
-## Buenas prácticas de scraping
+## Comandos
 
-El proyecto ya trae pausa de 2,5 a 3 segundos entre requests, un User-Agent
-identificable y reintentos con espera. Cambia el correo de contacto en
-`src/scrapers/base.py` por el tuyo. Con este volumen ningún portal se molesta,
-pero revisa el `robots.txt` de cualquier sitio nuevo antes de agregarlo.
+| Comando | Descripción |
+|---|---|
+| `python main.py buscar [--sin-avisos]` | Recolecta, puntúa y guarda ofertas para todos los usuarios activos |
+| `python main.py servir` | Inicia el dashboard web |
+| `python main.py crear-usuario --login X --password Y` | Crea una cuenta |
+| `python main.py generar-invitacion --url-base URL` | Genera un link de registro de un solo uso |
+| `python main.py resumen [--usuario X]` | Muestra el conteo de ofertas por estado |
+| `python main.py recalcular-scores [--usuario X]` | Recalcula los puntajes después de cambiar un perfil |
+| `python main.py inspeccionar --portal computrabajo` | Guarda HTML de muestra para diagnosticar selectores |
+| `python -m pytest tests/ -v` | Ejecuta los tests |
 
-## Agregar un portal
-
-1. Crea `src/scrapers/miportal.py` con una subclase de `Scraper` que implemente
-   `buscar(consulta) -> list[Oferta]`.
-2. Regístrala en el diccionario `PORTALES` de `src/scrapers/__init__.py`.
-3. Agrégala a `config.example.yaml` — queda disponible como checkbox en
-   `/configuracion` para que cada usuario la active si le sirve.
-
-Nada más del sistema necesita cambiar. El scoring, la deduplicación, la base y
-las notificaciones ya funcionan sobre el modelo común, por usuario.
-
-## Estructura
+Para una ejecución periódica basta con una sola entrada de `cron`, que procesa
+a todos los usuarios:
 
 ```
-main.py                     CLI (incluye alta de cuentas y migración)
-config.example.yaml         plantilla del perfil de búsqueda de un usuario
-src/
-  models.py                 Oferta + huella para dedup
-  db.py                     SQLite: usuarios + ofertas (PK usuario_id+huella)
-  scoring.py                puntaje y exclusiones, genérico por cfg
-  pipeline.py               ejecutar_todos(): corre cada usuario por separado
-  scrapers/                 uno por portal, reciben (cfg, creds)
-  notify/telegram.py        avisos, token/chat_id explícitos por usuario
-dashboard/
-  auth.py                   login por sesión
-  app.py                    rutas: /login, /, /estado/<huella>, /configuracion
-  templates/                index, login, configuracion
-tests/                      16 tests del núcleo (incluye aislamiento multiusuario)
+0 9,15,21 * * * cd /ruta/al/proyecto && ./venv/bin/python main.py buscar
 ```
 
-## Próximos pasos sugeridos
+## Tests
 
-1. **Registrar postulaciones** con fecha y estado, para hacer seguimiento.
-2. Terminar `_parsear_indeed` en `src/scrapers/correo.py` cuando llegue el
-   primer correo real con ofertas (hoy solo llega la confirmación de alerta).
+La suite cubre el núcleo del sistema sin acceder a la red: el puntaje y las
+exclusiones (incluida la coincidencia por palabra completa), la
+deduplicación y el aislamiento de datos entre usuarios.
+
+```bash
+python -m pytest tests/ -v
+```
+
+## Próximos pasos
+
+- Registro de postulaciones con fecha y seguimiento de cada proceso.
+- Mejorar la deduplicación cuando una misma empresa aparece con nombres
+  distintos en cada portal (por ejemplo, "Acme SpA" y "Acme").
+
+## Autor
+
+Daniel Leal — [github.com/BreakPointX13](https://github.com/BreakPointX13)
